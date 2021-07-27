@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"text/template"
+	"time"
 
 	"golang.org/x/net/html"
 )
@@ -104,6 +107,83 @@ func extractMetaProperty(token html.Token, property, metaType string) (content s
 	return
 }
 
+type TemplateValues struct {
+	Slug   string
+	Author string
+	Title  string
+	Year   string
+	Month  string
+	Url    string
+	Today  string
+}
+
+func frenchMonth(month string) string {
+	var months = map[string]string{
+		"January":   "Janvier",
+		"February":  "Février",
+		"March":     "Mars",
+		"April":     "Avril",
+		"Mai":       "Mai",
+		"June":      "Juin",
+		"July":      "Juillet",
+		"August":    "Août",
+		"September": "Septembre",
+		"October":   "Octobre",
+		"November":  "Novembre",
+		"December":  "Décembre",
+	}
+	return months[month]
+}
+
+func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, error) {
+	now := time.Now()
+	values := TemplateValues{
+		Title: urlMetaAttributes.Title,
+		Url:   url,
+		Today: now.Format("02") + " " + frenchMonth(now.Format("January")) + " " + now.Format("2006"),
+	}
+	author := ""
+	if urlMetaAttributes.Author != "" {
+		author = urlMetaAttributes.Author
+	} else if urlMetaAttributes.ArticleAuthor != "" {
+		author = urlMetaAttributes.ArticleAuthor
+	}
+	if author != "" {
+		values.Author = author
+	}
+	date := ""
+	if urlMetaAttributes.OgUpdatedTime != "" {
+		date = urlMetaAttributes.OgUpdatedTime
+	} else if urlMetaAttributes.ArticleModifiedTime != "" {
+		date = urlMetaAttributes.ArticleModifiedTime
+	} else if urlMetaAttributes.ArticlePublishedTime != "" {
+		date = urlMetaAttributes.ArticlePublishedTime
+	}
+	if date != "" {
+		parsedDate, err := time.Parse(time.RFC3339Nano, date)
+		if err != nil {
+			return "", err
+		}
+		values.Year = parsedDate.Format("2006")
+		values.Month = frenchMonth(parsedDate.Format("January"))
+	}
+	rawTemplate := `@misc{ {{.Slug}},
+  author = "{{.Author}}",
+  title = "{{.Title}}",
+  year = "{{.Year}}",
+  month = "{{.Month}}",
+  howpublished = "\url{ {{.Url}} }",
+  note = "[En ligne, accédé le {{.Today}}]"
+}`
+	template := template.Must(template.New("referenceTemplate").Parse(rawTemplate))
+	var content bytes.Buffer
+	err := template.Execute(&content, values)
+	if err != nil {
+		return "", err
+	}
+	return content.String(), nil
+}
+
 func main() {
 	url := flag.String("url", "", "the url of the page to get the informations of")
 	flag.Parse()
@@ -116,9 +196,9 @@ func main() {
 		log.Fatalf("error while trying to get the content of page %s: %s\n", *url, err)
 	}
 	attributes := extract_meta(content)
-	fmt.Printf("Title: %s\n", attributes.Title)
-	fmt.Printf("Author: %s\n", attributes.Author)
-	fmt.Printf("OgUpdatedTime: %s\n", attributes.OgUpdatedTime)
-	fmt.Printf("ArticlePublishedTime: %s\n", attributes.ArticlePublishedTime)
-	fmt.Printf("ArticleModifiedTime: %s\n", attributes.ArticleModifiedTime)
+	reference, err := generate_url_reference(*url, attributes)
+	if err != nil {
+		log.Fatalf("error while trying to generate the reference of page %s: %s\n", *url, err)
+	}
+	fmt.Printf("Reference: %s\n", reference)
 }
