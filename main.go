@@ -19,8 +19,8 @@ func download_page(url string) (io.Reader, error) {
 }
 
 type HTMLMeta struct {
-	Title    string
-	SiteName string `json:"site_name"`
+	Title  string
+	Author string
 }
 
 // Helper to get the meta informations of a page
@@ -46,14 +46,14 @@ func extract_meta(content io.Reader) *HTMLMeta {
 				titleFound = true
 			}
 			if t.Data == "meta" {
-				ogTitle, ok := extractMetaProperty(t, "og:title")
+				author, ok := extractMetaProperty(t, "author", "name")
 				if ok {
-					hm.Title = ogTitle
+					hm.Author = author
 				}
 
-				ogSiteName, ok := extractMetaProperty(t, "og:site_name")
+				ogTitle, ok := extractMetaProperty(t, "og:title", "property")
 				if ok {
-					hm.SiteName = ogSiteName
+					hm.Title = ogTitle
 				}
 			}
 		case html.TextToken:
@@ -67,9 +67,10 @@ func extract_meta(content io.Reader) *HTMLMeta {
 	return hm
 }
 
-func extractMetaProperty(token html.Token, property string) (content string, ok bool) {
+func extractMetaProperty(token html.Token, property, metaType string) (content string, ok bool) {
 	for _, attr := range token.Attr {
-		if attr.Key == "property" && attr.Val == property {
+		if (metaType == "property" && attr.Key == "property" && attr.Val == property) ||
+			(metaType == "name" && attr.Key == "name" && attr.Val == property) {
 			ok = true
 		}
 		if attr.Key == "content" {
@@ -91,5 +92,7 @@ func main() {
 		log.Fatalf("error while trying to get the content of page %s: %s\n", *url, err)
 	}
 	attributes := extract_meta(content)
-	fmt.Println(attributes)
+	fmt.Printf("Title: %s\n", attributes.Title)
+	fmt.Printf("SiteName: %s\n", attributes.SiteName)
+	fmt.Printf("Author: %s\n", attributes.Author)
 }
