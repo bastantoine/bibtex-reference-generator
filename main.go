@@ -21,6 +21,7 @@ func download_page(url string) (io.Reader, error) {
 type HTMLMeta struct {
 	Title                string
 	Author               string
+	ArticleAuthor        string
 	OgUpdatedTime        string
 	ArticlePublishedTime string
 	ArticleModifiedTime  string
@@ -52,6 +53,11 @@ func extract_meta(content io.Reader) *HTMLMeta {
 				author, ok := extractMetaProperty(t, "author", "name")
 				if ok {
 					hm.Author = author
+				}
+
+				articleAuthor, ok := extractMetaProperty(t, "article:author", "property")
+				if ok {
+					hm.ArticleAuthor = articleAuthor
 				}
 
 				ogTitle, ok := extractMetaProperty(t, "og:title", "property")
