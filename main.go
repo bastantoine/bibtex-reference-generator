@@ -10,6 +10,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gosimple/slug"
 	"golang.org/x/net/html"
 )
 
@@ -142,6 +143,7 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
 		Url:   url,
 		Today: now.Format("02") + " " + frenchMonth(now.Format("January")) + " " + now.Format("2006"),
 	}
+	referenceSlug := slug.Make(values.Title)
 	author := ""
 	if urlMetaAttributes.Author != "" {
 		author = urlMetaAttributes.Author
@@ -166,7 +168,10 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
 		}
 		values.Year = parsedDate.Format("2006")
 		values.Month = frenchMonth(parsedDate.Format("January"))
+		referenceSlug = parsedDate.Format("2006") + "-" + parsedDate.Format("01") + "-" + referenceSlug
 	}
+
+	values.Slug = referenceSlug
 	rawTemplate := `@misc{ {{.Slug}},
   author = "{{.Author}}",
   title = "{{.Title}}",
