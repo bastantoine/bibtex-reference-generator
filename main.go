@@ -205,5 +205,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("error while trying to generate the reference of page %s: %s\n", *url, err)
 	}
-	fmt.Printf("Reference: %s\n", reference)
+	fmt.Println(reference)
 }
