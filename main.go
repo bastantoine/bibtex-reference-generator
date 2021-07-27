@@ -19,8 +19,11 @@ func download_page(url string) (io.Reader, error) {
 }
 
 type HTMLMeta struct {
-	Title  string
-	Author string
+	Title                string
+	Author               string
+	OgUpdatedTime        string
+	ArticlePublishedTime string
+	ArticleModifiedTime  string
 }
 
 // Helper to get the meta informations of a page
@@ -54,6 +57,21 @@ func extract_meta(content io.Reader) *HTMLMeta {
 				ogTitle, ok := extractMetaProperty(t, "og:title", "property")
 				if ok {
 					hm.Title = ogTitle
+				}
+
+				articlePublishedTime, ok := extractMetaProperty(t, "article:published_time", "property")
+				if ok {
+					hm.ArticlePublishedTime = articlePublishedTime
+				}
+
+				articleModifiedTime, ok := extractMetaProperty(t, "article:modified_time", "property")
+				if ok {
+					hm.ArticleModifiedTime = articleModifiedTime
+				}
+
+				ogUpdatedTime, ok := extractMetaProperty(t, "og:updated_time", "property")
+				if ok {
+					hm.OgUpdatedTime = ogUpdatedTime
 				}
 			}
 		case html.TextToken:
@@ -93,6 +111,8 @@ func main() {
 	}
 	attributes := extract_meta(content)
 	fmt.Printf("Title: %s\n", attributes.Title)
-	fmt.Printf("SiteName: %s\n", attributes.SiteName)
 	fmt.Printf("Author: %s\n", attributes.Author)
+	fmt.Printf("OgUpdatedTime: %s\n", attributes.OgUpdatedTime)
+	fmt.Printf("ArticlePublishedTime: %s\n", attributes.ArticlePublishedTime)
+	fmt.Printf("ArticleModifiedTime: %s\n", attributes.ArticleModifiedTime)
 }
