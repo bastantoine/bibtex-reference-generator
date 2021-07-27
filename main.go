@@ -6,19 +6,94 @@ import (
 	"io"
 	"log"
 	"net/http"
+
+	"golang.org/x/net/html"
 )
 
-func download_page(url string) (string, error) {
+func download_page(url string) (io.Reader, error) {
 	res, err := http.Get(url)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	content, err := io.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-		return "", err
+	return res.Body, nil
+}
+
+type HTMLMeta struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Image       string `json:"image"`
+	SiteName    string `json:"site_name"`
+}
+
+// Helper to get the meta informations of a page
+// From https://gist.github.com/inotnako/c4a82f6723f6ccea5d83c5d3689373dd
+func extract_meta(content io.Reader) *HTMLMeta {
+	tokenizer := html.NewTokenizer(content)
+
+	titleFound := false
+
+	hm := new(HTMLMeta)
+
+	for {
+		tt := tokenizer.Next()
+		switch tt {
+		case html.ErrorToken:
+			return hm
+		case html.StartTagToken, html.SelfClosingTagToken:
+			t := tokenizer.Token()
+			if t.Data == `body` {
+				return hm
+			}
+			if t.Data == "title" {
+				titleFound = true
+			}
+			if t.Data == "meta" {
+				desc, ok := extractMetaProperty(t, "description")
+				if ok {
+					hm.Description = desc
+				}
+
+				ogTitle, ok := extractMetaProperty(t, "og:title")
+				if ok {
+					hm.Title = ogTitle
+				}
+
+				ogDesc, ok := extractMetaProperty(t, "og:description")
+				if ok {
+					hm.Description = ogDesc
+				}
+
+				ogImage, ok := extractMetaProperty(t, "og:image")
+				if ok {
+					hm.Image = ogImage
+				}
+
+				ogSiteName, ok := extractMetaProperty(t, "og:site_name")
+				if ok {
+					hm.SiteName = ogSiteName
+				}
+			}
+		case html.TextToken:
+			if titleFound {
+				t := tokenizer.Token()
+				hm.Title = t.Data
+				titleFound = false
+			}
+		}
 	}
-	return string(content), nil
+	return hm
+}
+
+func extractMetaProperty(token html.Token, property string) (content string, ok bool) {
+	for _, attr := range token.Attr {
+		if attr.Key == "property" && attr.Val == property {
+			ok = true
+		}
+		if attr.Key == "content" {
+			content = attr.Val
+		}
+	}
+	return
 }
 
 func main() {
@@ -32,5 +107,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("error while trying to get the content of page %s: %s\n", *url, err)
 	}
-	fmt.Println(content)
+	attributes := extract_meta(content)
+	fmt.Println(attributes)
 }
