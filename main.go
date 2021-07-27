@@ -19,7 +19,7 @@ func download_page(url string) (io.Reader, error) {
 }
 
 type HTMLMeta struct {
-	Title    string `json:"title"`
+	Title    string
 	SiteName string `json:"site_name"`
 }
 
