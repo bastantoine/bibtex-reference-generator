@@ -154,12 +154,12 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
 		values.Author = author
 	}
 	date := ""
-	if urlMetaAttributes.OgUpdatedTime != "" {
+	if urlMetaAttributes.ArticlePublishedTime != "" {
+		date = urlMetaAttributes.ArticlePublishedTime
+	} else if urlMetaAttributes.OgUpdatedTime != "" {
 		date = urlMetaAttributes.OgUpdatedTime
 	} else if urlMetaAttributes.ArticleModifiedTime != "" {
 		date = urlMetaAttributes.ArticleModifiedTime
-	} else if urlMetaAttributes.ArticlePublishedTime != "" {
-		date = urlMetaAttributes.ArticlePublishedTime
 	}
 	if date != "" {
 		parsedDate, err := time.Parse(time.RFC3339Nano, date)
