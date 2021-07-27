@@ -19,10 +19,8 @@ func download_page(url string) (io.Reader, error) {
 }
 
 type HTMLMeta struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Image       string `json:"image"`
-	SiteName    string `json:"site_name"`
+	Title    string `json:"title"`
+	SiteName string `json:"site_name"`
 }
 
 // Helper to get the meta informations of a page
@@ -48,24 +46,9 @@ func extract_meta(content io.Reader) *HTMLMeta {
 				titleFound = true
 			}
 			if t.Data == "meta" {
-				desc, ok := extractMetaProperty(t, "description")
-				if ok {
-					hm.Description = desc
-				}
-
 				ogTitle, ok := extractMetaProperty(t, "og:title")
 				if ok {
 					hm.Title = ogTitle
-				}
-
-				ogDesc, ok := extractMetaProperty(t, "og:description")
-				if ok {
-					hm.Description = ogDesc
-				}
-
-				ogImage, ok := extractMetaProperty(t, "og:image")
-				if ok {
-					hm.Image = ogImage
 				}
 
 				ogSiteName, ok := extractMetaProperty(t, "og:site_name")
