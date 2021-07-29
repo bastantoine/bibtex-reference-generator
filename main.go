@@ -170,7 +170,7 @@ func get_template_values(url string, urlMetaAttributes *HTMLMeta) (TemplateValue
 			return TemplateValues{}, err
 		}
 		values.Year = parsedDate.Format("2006")
-		values.Month = frenchMonth(parsedDate.Format("January"))
+		values.Month = parsedDate.Format("01")
 		referenceSlug = parsedDate.Format("2006") + "-" + parsedDate.Format("01") + "-" + referenceSlug
 	}
 
