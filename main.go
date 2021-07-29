@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"text/template"
 	"time"
 
@@ -176,12 +178,12 @@ func get_template_values(url string, urlMetaAttributes *HTMLMeta) (TemplateValue
 	return values, nil
 }
 
-func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, error) {
+func generate_url_reference(url string, urlMetaAttributes *HTMLMeta, templateType string) (string, error) {
 	values, err := get_template_values(url, urlMetaAttributes)
 	if err != nil {
 		return "", err
 	}
-	rawTemplate := `@misc{ {{.Slug}},
+	bibtexTemplate := `@misc{ {{.Slug}},
   author = "{{.Author}}",
   title = "{{.Title}}",
   year = "{{.Year}}",
@@ -189,9 +191,25 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
   howpublished = "\url{ {{.Url}} }",
   note = "[En ligne, accédée le {{.Today}}]"
 }`
-	template := template.Must(template.New("referenceTemplate").Parse(rawTemplate))
+	biblatexTemplate := `@online{ {{.Slug}},
+  author = "{{.Author}}",
+  title = "{{.Title}}",
+  year = "{{.Year}}",
+  month = "{{.Month}}",
+  url = "{{.Url}}",
+  note = "[En ligne, accédée le {{.Today}}]"
+}`
+	var tmpl *template.Template
+	switch templateType {
+	case "bibtex":
+		tmpl = template.Must(template.New("referenceTemplate").Parse(bibtexTemplate))
+	case "biblatex":
+		tmpl = template.Must(template.New("referenceTemplate").Parse(biblatexTemplate))
+	default:
+		return "", errors.New("templateType must be bibtex or biblatex")
+	}
 	var content bytes.Buffer
-	err = template.Execute(&content, values)
+	err = tmpl.Execute(&content, values)
 	if err != nil {
 		return "", err
 	}
@@ -200,7 +218,18 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
 
 func main() {
 	url := flag.String("url", "", "the url of the page to get the informations of")
+	bibtex := flag.Bool("bibtex", false, "generate a bibtex reference")
+	biblatex := flag.Bool("biblatex", false, "generate a biblatex reference")
 	flag.Parse()
+
+	if *bibtex && *biblatex {
+		fmt.Println("You can't use both bibtex and biblatex")
+		os.Exit(1)
+	}
+	if !*bibtex && !*biblatex {
+		fmt.Println("You must use either bibtex or biblatex")
+		os.Exit(1)
+	}
 
 	if *url == "" {
 		log.Fatal("url is required")
@@ -210,7 +239,13 @@ func main() {
 		log.Fatalf("error while trying to get the content of page %s: %s\n", *url, err)
 	}
 	attributes := extract_meta(content)
-	reference, err := generate_url_reference(*url, attributes)
+	var templateType string
+	if *bibtex {
+		templateType = "bibtex"
+	} else if *biblatex {
+		templateType = "biblatex"
+	}
+	reference, err := generate_url_reference(*url, attributes, templateType)
 	if err != nil {
 		log.Fatalf("error while trying to generate the reference of page %s: %s\n", *url, err)
 	}

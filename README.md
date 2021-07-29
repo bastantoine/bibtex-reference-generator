@@ -1,6 +1,6 @@
 # Bibtex online reference generator
 
-This repo contains a small script that given an url will generate a Bibtex reference with the most informations possible included to help you gain time.
+This repo contains a small script that given an url will generate a Bibtex or Biblatex reference with the most informations possible included to help you gain time.
 
 So you will be able to generate something like this:
 
@@ -33,13 +33,15 @@ This is quite simple (provided that you have Go installed on your machine)! Simp
    1. You compile it to a standalone executable and then use it to generate the references:
         ```bash
         go build -o bibtex-reference-generator .
-        ./bibtex-reference-generator -url "https://podalirius.net/en/articles/python-vulnerabilities-code-execution-in-jinja-templates/"
+        ./bibtex-reference-generator -bibtex -url "https://podalirius.net/en/articles/python-vulnerabilities-code-execution-in-jinja-templates/"
         ```
    2. You use the `go run` method to run it:
         ```bash
-        go run main.go -url "https://podalirius.net/en/articles/python-vulnerabilities-code-execution-in-jinja-templates/"
+        go run main.go -bibtex -url "https://podalirius.net/en/articles/python-vulnerabilities-code-execution-in-jinja-templates/"
         ```
         Note that if you are using this method, you must not move the `main.go` file away from the `go.mod` and `go.sum` files.
+
+*Note :* switch `-bibtex` with `-biblatex` to use a Biblatex format.
 
 # Why some informations might be missing sometimes?
 
