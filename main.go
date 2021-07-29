@@ -27,6 +27,7 @@ type HTMLMeta struct {
 	Author               string
 	ArticleAuthor        string
 	OgUpdatedTime        string
+	OgTitle              string
 	ArticlePublishedTime string
 	ArticleModifiedTime  string
 }
@@ -66,7 +67,7 @@ func extract_meta(content io.Reader) *HTMLMeta {
 
 				ogTitle, ok := extractMetaProperty(t, "og:title", "property")
 				if ok {
-					hm.Title = ogTitle
+					hm.OgTitle = ogTitle
 				}
 
 				articlePublishedTime, ok := extractMetaProperty(t, "article:published_time", "property")
@@ -139,19 +140,19 @@ func frenchMonth(month string) string {
 func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, error) {
 	now := time.Now()
 	values := TemplateValues{
-		Title: urlMetaAttributes.Title,
 		Url:   url,
 		Today: now.Format("02") + " " + frenchMonth(now.Format("January")) + " " + now.Format("2006"),
 	}
-	referenceSlug := slug.Make(values.Title)
-	author := ""
-	if urlMetaAttributes.Author != "" {
-		author = urlMetaAttributes.Author
-	} else if urlMetaAttributes.ArticleAuthor != "" {
-		author = urlMetaAttributes.ArticleAuthor
+	if urlMetaAttributes.Title != "" {
+		values.Title = urlMetaAttributes.Title
+	} else if urlMetaAttributes.OgTitle != "" {
+		values.Title = urlMetaAttributes.OgTitle
 	}
-	if author != "" {
-		values.Author = author
+	referenceSlug := slug.Make(values.Title)
+	if urlMetaAttributes.Author != "" {
+		values.Author = urlMetaAttributes.Author
+	} else if urlMetaAttributes.ArticleAuthor != "" {
+		values.Author = urlMetaAttributes.ArticleAuthor
 	}
 	date := ""
 	if urlMetaAttributes.ArticlePublishedTime != "" {
