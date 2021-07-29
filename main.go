@@ -178,7 +178,7 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
   year = "{{.Year}}",
   month = "{{.Month}}",
   howpublished = "\url{ {{.Url}} }",
-  note = "[En ligne, accédé le {{.Today}}]"
+  note = "[En ligne, accédée le {{.Today}}]"
 }`
 	template := template.Must(template.New("referenceTemplate").Parse(rawTemplate))
 	var content bytes.Buffer
