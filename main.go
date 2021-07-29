@@ -137,7 +137,7 @@ func frenchMonth(month string) string {
 	return months[month]
 }
 
-func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, error) {
+func get_template_values(url string, urlMetaAttributes *HTMLMeta) (TemplateValues, error) {
 	now := time.Now()
 	values := TemplateValues{
 		Url:   url,
@@ -165,7 +165,7 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
 	if date != "" {
 		parsedDate, err := time.Parse(time.RFC3339Nano, date)
 		if err != nil {
-			return "", err
+			return TemplateValues{}, err
 		}
 		values.Year = parsedDate.Format("2006")
 		values.Month = frenchMonth(parsedDate.Format("January"))
@@ -173,6 +173,14 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
 	}
 
 	values.Slug = referenceSlug
+	return values, nil
+}
+
+func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, error) {
+	values, err := get_template_values(url, urlMetaAttributes)
+	if err != nil {
+		return "", err
+	}
 	rawTemplate := `@misc{ {{.Slug}},
   author = "{{.Author}}",
   title = "{{.Title}}",
@@ -183,7 +191,7 @@ func generate_url_reference(url string, urlMetaAttributes *HTMLMeta) (string, er
 }`
 	template := template.Must(template.New("referenceTemplate").Parse(rawTemplate))
 	var content bytes.Buffer
-	err := template.Execute(&content, values)
+	err = template.Execute(&content, values)
 	if err != nil {
 		return "", err
 	}
